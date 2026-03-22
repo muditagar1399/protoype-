@@ -1,0 +1,206 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "CV Uploader",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your CV",
+              "fieldType": "file",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Add job description",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email ID",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "669d0f07-78de-433b-865d-fc55cad5cfdc",
+      "name": "On form submission1",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        480,
+        -80
+      ],
+      "typeVersion": 2.5,
+      "webhookId": "208c01cf-7058-486d-a6a3-d9dce5436c0c"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Upload_your_CV",
+        "options": {}
+      },
+      "id": "c847ec71-2267-4d9e-8cd9-d18c90c664c8",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        688,
+        -80
+      ],
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert ATS resume optimizer.\n\nHere is the candidate's resume:\n{{ $json.text }}\n\nHere is the job description:\n{{ $('On form submission1').item.json['Add job description'] }}\n\nTask:\n- Rewrite the resume to match the job description\n- Make it ATS-friendly\n- Use strong action verbs\n- Add measurable achievements (numbers, %, impact)\n- Highlight relevant skills (SQL, Python, etc.)\n- Keep it clean and professional\n\nReturn the resume in plain text (NOT HTML).",
+        "options": {}
+      },
+      "id": "d8f97a8d-d108-483b-b2bb-fb483923954e",
+      "name": "ATS Optimizer Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        880,
+        -80
+      ],
+      "typeVersion": 3.1,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "id": "d61b42dc-9a53-47dc-961c-9392515f5314",
+      "name": "Parse Agent Output",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1088,
+        -80
+      ],
+      "typeVersion": 2,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission1').item.json['Email ID'] }}",
+        "subject": "Resume Mudit agarwal ",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "c2f0acef-da67-4aae-8059-c66775f1bef3",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1280,
+        -80
+      ],
+      "typeVersion": 2.2,
+      "webhookId": "1cc759f6-1b44-44e6-b1c7-c57046e9da36",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rwJktLpxHCidOiIk",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        128
+      ],
+      "id": "99ad547c-c9a8-463d-9463-d5e29945aedb",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XJIsrqIMP3d0vwRK",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "ATS Optimizer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ATS Optimizer Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ATS Optimizer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dda3d93b-5a97-43f0-a4b7-6ce1748b4826",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "288ec9810c7ff438bf070c16e7948664011c226ce4a6ddda19f857bb58f4c864"
+  },
+  "id": "UqEjpMAoakqg75az",
+  "tags": []
+}
